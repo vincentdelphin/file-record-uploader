@@ -10,7 +10,7 @@ Upon connecting the database to the application, once the file has been successf
 with the event type mapping as requested in the assessment specification.
 
 Unfortunately, I was unable to add javadoc due to having to work and visit immediate family over the past few weeks, I appreciate the patience and conisderation 
-for allowing me to undertake the project. 
+for allowing me to undertake the project. I had added javadoc to the files whilst visiting family however, my laptop broke.
 
 I am aware there is a bug in the code which is explained within the 'publishRecords' method found in main/java/model/records.java.
 
