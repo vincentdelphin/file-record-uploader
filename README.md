@@ -1,6 +1,9 @@
 # file-record-uploader
 File recorder uploader project for Williams Lea.
 
+The intial project was based upon the https://github.com/spring-guides/gs-uploading-files#run-the-application which demonstrates how to upload a file. The rest of the
+project was focused on building the back-end to allow for the uploading of the records.
+
 The majority of this project is developed within the uploadingfiles package found within the main/java directory. Records java file serves to encapsulate a record
 object along with the methods to read and save the records to a h2 database which can be accessed through http://localhost:8080/h2-console/.
 Upon connecting the database to the application, once the file has been successfully uploaded you can access the database to observe the records uploaded along 
