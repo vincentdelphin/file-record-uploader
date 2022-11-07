@@ -15,3 +15,6 @@ for allowing me to undertake the project. I had added javadoc to the files whils
 I am aware there is a bug in the code which is explained within the 'publishRecords' method found in main/java/model/records.java.
 
 For any questions/explanations you may have, I am happy to discuss my solution via email (vincentmledelphin@gmail.com) or a zoom meeting anytime apart from Monday,Tuesday and Saturday as I am working.
+
+Video demonstration of the project working below:
+https://youtu.be/e6iERS8OwlA
