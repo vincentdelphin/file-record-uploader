@@ -26,6 +26,7 @@ import org.springframework.web.servlet.mvc.method.annotation.MvcUriComponentsBui
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
 import com.example.uploadingfiles.dao.RecordsRepository;
+import com.example.uploadingfiles.model.RecordModel;
 import com.example.uploadingfiles.storage.StorageFileNotFoundException;
 import com.example.uploadingfiles.storage.StorageService;
 
@@ -69,7 +70,7 @@ public class FileUploadController {
 		storageService.store(file);
 		redirectAttributes.addFlashAttribute("message",
 				"You successfully uploaded " + file.getOriginalFilename() + "!");
-				Records model = new Records();
+				RecordModel model = new RecordModel();
 				
 				// create event type map and document list to use for uploading to database
 				
@@ -85,13 +86,13 @@ public class FileUploadController {
 				// now we have a list of lists which contain the documents in each column. Along with their proper names
 				// We use each refined document along with mapping to create a record object to save to the  database 
 	
-				ArrayList<Records> listOfRecordsColumn1 = model.publishRecords(refinedDocumentList1, eventTypeMap);
-				for(Records recordToUpload : listOfRecordsColumn1){
+				ArrayList<RecordModel> listOfRecordsColumn1 = model.publishRecords(refinedDocumentList1, eventTypeMap);
+				for(RecordModel recordToUpload : listOfRecordsColumn1){
 					recordsRepo.save(recordToUpload);
 				}
 
-				ArrayList<Records> listOfRecordsColumn2 = model.publishRecords(refinedDocumentList2, eventTypeMap);
-				for(Records recordToUpload : listOfRecordsColumn2){
+				ArrayList<RecordModel> listOfRecordsColumn2 = model.publishRecords(refinedDocumentList2, eventTypeMap);
+				for(RecordModel recordToUpload : listOfRecordsColumn2){
 					recordsRepo.save(recordToUpload);
 				}
 				

@@ -1,5 +1,4 @@
 package com.example.uploadingfiles.model;
-
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStream;
@@ -10,14 +9,87 @@ import java.util.List;
 import java.util.Map;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import javax.persistence.Entity;
+import javax.persistence.GeneratedValue;
+import javax.persistence.GenerationType;
+import javax.persistence.Id;
 import org.springframework.web.multipart.MultipartFile;
 
-import com.example.uploadingfiles.Records;
-
-// this class is used to contain 
+@Entity
 public class RecordModel {
+    
 
+    // UniqueIdentifier (some way to uniquely identify the record):
+    @GeneratedValue(strategy=GenerationType.AUTO)
+    @Id
+    private long id;
 
+    // Company Name (taken directly from the text file, i.e. ASH RAIL LTD).
+    // Company Number (“”, i.e. 11467106).
+    // EventType (The code should be mapped to the index at the beginning of the file. I.e. C2 should be mapped to “NOTIFICATION OF ANY CHANGE AMONG THE COMPANY'S DIRECTORS.”).
+    // EventDate (directly from the code).
+    
+    private String companyName;
+    private String companyNumber;
+    private String eventType;
+    private String eventDate;
+
+    public RecordModel() {
+		//default constructor
+	}
+    
+    public RecordModel(String companyName, String companyNumber, String eventType, String eventDate) {
+        this.companyName = companyName;
+        this.companyNumber = companyNumber;
+        this.eventType = eventType;
+        this.eventDate = eventDate;
+    }
+
+    public long getId() {
+        return id;
+    }
+
+    public void setId(long id) {
+        this.id = id;
+    }
+
+    public String getCompanyName() {
+        return companyName;
+    }
+
+    public void setCompanyName(String companyName) {
+        this.companyName = companyName;
+    }
+
+    public String getCompanyNumber() {
+        return companyNumber;
+    }
+
+    public void setCompanyNumber(String companyNumber) {
+        this.companyNumber = companyNumber;
+    }
+
+    public String getEventType() {
+        return eventType;
+    }
+
+    public void setEventType(String eventType) {
+        this.eventType = eventType;
+    }
+
+    public String getEventDate() {
+        return eventDate;
+    }
+
+    public void setEventDate(String eventDate) {
+        this.eventDate = eventDate;
+    }
+
+    @Override
+    public String toString() {
+      return "company entry [id=" + id + ", company name =" + companyName + ", company name =" + companyName + ", event type =" + eventType + ", event date =" + eventDate + "]";
+    }
+    
     public Map<String, String> readAllLinesArray(MultipartFile file){
         BufferedReader br;
         List<String> result = new ArrayList<>();
@@ -25,37 +97,37 @@ public class RecordModel {
         String line;
         InputStream is = file.getInputStream();
         br = new BufferedReader(new InputStreamReader(is));
-        String regex2 = "\\s*[(][A-Z]\\d*[)]";
-        Pattern pattern1 = Pattern.compile(regex2);
         String regex = "\\s*[(][A-Z]\\d*[)]";
         Pattern pattern = Pattern.compile(regex);
-        
+        HashMap<String,String> map = new HashMap<String,String>();
+
         while ((line = br.readLine()) != null) {
 
-            Matcher m = pattern1.matcher(line);
+            Matcher m = pattern.matcher(line);
             if((line.contains("LOUISE SMYTH") || line.contains("REGISTRAR OF COMPANIES"))){
+                // stop reading through file since we finished reading through event type mappings
                 break;
             }
 
             if(m.find() == false){
+                // we haven't found an event type mapping so the line needs to be appended to the previous mapping
+                // for example (G10)  STATEMENT OF CAPITAL ACCOMPANYING RETURN DELIVERED UNDER SECTION 708 (NOTICE OF CANCELLATION OF SHARES ON
+                // PURCHASE OF OWN SHARES) OR 730 (NOTICE OF CANCELLATION OF SHARES HELD AS TREASURY SHARES).
+                // needs to be updated to 1 line : STATEMENT OF CAPITAL ACCOMPANYING RETURN DELIVERED UNDER SECTION 708 
+                // (NOTICE OF CANCELLATION OF SHARES ON PURCHASE OF OWN SHARES) OR 730 (NOTICE OF CANCELLATION OF SHARES HELD AS TREASURY SHARES)
                 String line2WithNoSpaces = (result.get(result.size() - 1)).trim();
                 String currentLine = line.trim();
                 String combinedLines = line2WithNoSpaces + " " + currentLine;
                 result.remove(result.size() - 1);
                 result.add(result.size() - 1, combinedLines);
             }else{
-            // Found line containing (B1)...
+            // Found line containing event type e.g. (B1)...
              String currentLine = line.trim();
              result.add(currentLine);
             }
         }
-
-        // regular expression to extract (A) etc . \s[(]\D\d*[)]\s
-        // loop through array, if the line has douments issued then stop adding
-        // regex to map.
+        
         // Hash map key : (A) value = everything after without spaces or full stop.
-        HashMap<String,String> map = new HashMap<String,String>();
-        System.out.println("RESULT ARRAY STRING = " + result.toString());
         for (String s:result){
             if (s.contains(" DOCUMNENTS ISSUED ")){
                 break;
@@ -66,9 +138,7 @@ public class RecordModel {
                 map.put(m.group(), s.substring(m.end(), s.length()-1));
             }
         }
-        // System.out.println("MAP KEYS: " + map.keySet());
-        // System.out.println("MAP VALUES: " + map.values());
-        // Now I have a map of all event types, need to loop through text file 
+        // map contains all event types
         return map;
         } 	catch (IOException e) {
         System.err.println(e.getMessage());       
@@ -76,146 +146,22 @@ public class RecordModel {
         return null;
     }
 
-    public Map<String, String> readAllRecords(MultipartFile file){
-        List<String> result = new ArrayList<>();
-        BufferedReader br;
-        String regex = "[0-9]{8}";
-        String spaceRegex = "\\s{2,}";
-        Pattern pattern = Pattern.compile(regex);
-        Pattern spacePattern = Pattern.compile(spaceRegex);
-        int counter = 0;
-        int companyNameCounter = 0;
-        List<String> sortedArrayList = new ArrayList<>();
-        HashMap<String, String> recordMap = new HashMap<String,String>();
-
-        try {
-            String line;
-            String record;
-            InputStream is = file.getInputStream();
-            br = new BufferedReader(new InputStreamReader(is));
-            while ((line = br.readLine()) != null) {
-                if((line.contains("******************************************************* DOCUMENTS ISSUED ***********************************************************"))){
-                    // System.out.println("Reading through documents");
-                    while((record = br.readLine()) != null){
-                        // System.out.println("SIZE OF LINE = " + record.length());
-                        // If I hit limited or a line without any 8 digit number then it belongs to previous size-2 element.
-                        if(record.length() != 0){
-                            result.add(record.substring(0, 74));
-                            result.add(record.substring(74, record.length()));
-                        }
-                    }
-                    break;
-                }
-            }
-            System.out.println(result.toString() + result.size() + " = size");
-        } catch(IOException e)  
-        {  
-        e.printStackTrace();  
-        }
-
-        // LOOP THROUGH ARRAYLIST TO GET from {x1,y1,x2,y2} to {x1+x2,y1+y2} then copy each element of array list to new array list to have format of [company1,company2,limited+limited,limited+incoporated]
-        while (counter < result.size()){
-            String currentLine = result.get(counter).trim();
-            Matcher numberMatcher = pattern.matcher(currentLine);
-            if(numberMatcher.find()){
-                // FOUND COMPANY NUMBER
-                sortedArrayList.add(currentLine);
-                counter++;
-            }  else if(!numberMatcher.find()){
-                     // DONT FIND COMPANY NUMBER
-                    // Create list and iterate through {x1,y1,x2,y2}
-                    Map<Integer, String> companyNameList = new HashMap<Integer, String>();
-                    companyNameCounter=0;
-                    String companyNameEven = "";
-                    String companyNameOdd = "";
-                    while(counter < result.size()){
-                    String currentLineCompanyName = result.get(counter).trim();
-                    Matcher numberMatcherCompanyName = pattern.matcher(currentLineCompanyName);
-                            if(!numberMatcherCompanyName.find()){
-                            // not a company
-                            companyNameList.put(companyNameCounter, currentLineCompanyName);
-                            companyNameCounter++;
-                            counter++;
-                            }else{
-                            break;
-                            }
-                        }
-                        // Minus 1 because we use current element for first list whilst adding non company elements to list
-                        counter--;
-                        // Loop through list to combine values to get {x1+x2,y1+y2}
-                        for (int i:companyNameList.keySet()){
-                            if(i%2==0){
-                                companyNameEven = companyNameEven + " " + companyNameList.get(i);
-                            } else{
-                                companyNameOdd = companyNameOdd + companyNameList.get(i);
-                                }
-                            }
-                            if(!(companyNameEven.length() ==  0)){
-                                sortedArrayList.add(companyNameEven);
-                            }
-                            if(!(companyNameOdd.length() ==  0)){
-                                sortedArrayList.add(companyNameOdd);
-                            }
-                    counter++;
-                }else{
-                counter++;
-            }
-        }
-        // Cleaning record array from empty
-        int i = 0;
-        while(i<sortedArrayList.size()){
-            String currentLineInSortedArrayList = sortedArrayList.get(i).trim();
-            Matcher m1 = pattern.matcher(currentLineInSortedArrayList);
-            // IF WE FIND AN 8 DIGIT NUMBER IN STRING
-            if(m1.find()){
-                recordMap.put(currentLineInSortedArrayList, null);
-                i++;
-            }else if(!m1.find()){
-                if (sortedArrayList.get(i) == "GAP"){
-                    System.out.println("HEHRHEHRHERHEHRHEHREH");
-                    i++;
-                }else{
-                String previous = sortedArrayList.get(i - 2).trim();
-                Matcher spaceM = spacePattern.matcher(previous);
-                spaceM.find();
-                recordMap.put(previous,previous.substring(0,spaceM.start()) + " " + currentLineInSortedArrayList);
-                i++;}
-            }else{
-                i++;
-            }
-        }
-        // Using iterator to remove final non records from sortedArrayList.
-        recordMap.keySet().removeIf(n -> !(pattern.matcher(n).find())==true);
-        // System.out.println("record map = " + recordMap.toString());
-        // System.out.println("record size = " + recordMap.size());
-        return recordMap;
-    }
-
     public List<List<String>> splitDocuments(MultipartFile file){
         List<String> documentColumnOne = new ArrayList<>();
         List<String> documentColumnTwo = new ArrayList<>();
         List<List<String>> combinedDocumentColumns = new ArrayList<>();
         BufferedReader br;
-        String regex = "[0-9]{8}";
-        String spaceRegex = "\\s{2,}";
-        Pattern pattern = Pattern.compile(regex);
-        Pattern spacePattern = Pattern.compile(spaceRegex);
-        int counter = 0;
-        int companyNameCounter = 0;
-        List<String> sortedArrayList = new ArrayList<>();
-        HashMap<String, String> recordMap = new HashMap<String,String>();
-
         try {
             String line;
             String record;
             InputStream is = file.getInputStream();
             br = new BufferedReader(new InputStreamReader(is));
             while ((line = br.readLine()) != null) {
+                // we want to only find documents, they only exist after the documents issued line
                 if((line.contains("******************************************************* DOCUMENTS ISSUED ***********************************************************"))){
-                    // System.out.println("Reading through documents");
                     while((record = br.readLine()) != null){
-                        // System.out.println("SIZE OF LINE = " + record.length());
-                        // If I hit limited or a line without any 8 digit number then it belongs to previous size-2 element.
+                        // if we hit limited or a line without any 8 digit number then it belongs to previous size-2 element
+                        // since every company requires a company number which is 8 digits
                         if(record.length() != 0){
                             documentColumnOne.add(record.substring(0, 74));
                             documentColumnTwo.add(record.substring(74, record.length()));
@@ -224,22 +170,17 @@ public class RecordModel {
                     break;
                 }
             }
-            System.out.println(documentColumnOne.toString() + documentColumnOne.size() + " = size");
-            System.out.println(documentColumnTwo.toString() + documentColumnTwo.size() + " = size");
         } catch(IOException e)  
         {  
         e.printStackTrace();  
         }
-
+        // we now have one map with the combination of columns from documents
         combinedDocumentColumns.add(documentColumnOne);
         combinedDocumentColumns.add(documentColumnTwo);
-        
-        // System.out.println("COMBINED LISTS = " + combinedDocumentColumns.toString() + combinedDocumentColumns.size() + " = size");
     return combinedDocumentColumns;
     }
 
-    public static Map<String, String> readRecord(List<String> recordDocument){
-    
+    public Map<String, String> readRecord(List<String> recordDocument){
             String regex = "[0-9]{8}";
             String spaceRegex = "\\s{2,}";
             Pattern pattern = Pattern.compile(regex);
@@ -329,10 +270,9 @@ public class RecordModel {
             return recordMap;
         }
 
-
-    public ArrayList<Records> publishRecords(Map<String,String> recordList, Map<String,String> eventTypeMap){
+    public ArrayList<RecordModel> publishRecords(Map<String,String> recordList, Map<String,String> eventTypeMap){
             String spaceRegex = "\\s{2,}";
-            ArrayList<Records> records = new ArrayList<Records>();
+            ArrayList<RecordModel> records = new ArrayList<RecordModel>();
             String regex = "[0-9]{8}";
             Pattern pattern = Pattern.compile(regex);
             Pattern spacePattern = Pattern.compile(spaceRegex);
@@ -422,9 +362,10 @@ public class RecordModel {
                     eventType = eventTypeMap.get(eventType).trim();
                 }
             // create a record object for record which contains correct name, company number etc.
-            Records record = new Records(name, companyNumber, eventType, eventDate);
+            RecordModel record = new RecordModel(name, companyNumber, eventType, eventDate);
             records.add(record);
             }
             return records;
             }    
-    }
+}
+
